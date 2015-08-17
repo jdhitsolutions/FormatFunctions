@@ -32,27 +32,31 @@ The number of decimal places to return between 0 and 15.
 .Parameter String
 Format the percentage as a string which will include the % symbol. This is done using the -f operator.
 .Example
-PS C:\> Format-Percent 1234 5000
-24.68
+PS C:\> Format-Percent -value 1234.567 -total 5000 -decimal 4
+24.6913
+
+Calculate a percentage from 1234.567 out of 5000 (i.e. 1234.567/5000) to 4 decimal points.
 .Example
-PS C:\> get-ciminstance win32_operatingsystem -computer chi-dc04 | select PSComputername,TotalVisibleMemorySize,@{Name="PctFreeMem";Expression={ Format-Percent $_.FreePhysicalMemory $_.TotalVisibleMemorySize  }}
+PS C:\> get-ciminstance win32_operatingsystem -computer chi-dc04 | select PSComputername,TotalVisibleMemorySize,@{Name="PctFreeMem";Expression={ Format-Percent $_.FreePhysicalMemory $_.TotalVisibleMemorySize}}
 
 PSComputerName             TotalVisibleMemorySize           PctFreeMem
 --------------             ----------------------           ----------
 chi-dc04                                  1738292                23.92
 .Example
-PS C:\> get-ciminstance win32_operatingsystem -computer chi-dc04 | select PSComputername,TotalVisibleMemorySize,@{Name="PctFreeMem";Expression={ Format-Percent $_.FreePhysicalMemory $_.TotalVisibleMemorySize -asString  }}
+PS C:\> get-ciminstance win32_operatingsystem -computer chi-dc04 | select PSComputername,TotalVisibleMemorySize,@{Name="PctFreeMem";Expression={ Format-Percent $_.FreePhysicalMemory $_.TotalVisibleMemorySize -asString}}
 PSComputerName             TotalVisibleMemorySize           PctFreeMem
 --------------             ----------------------           ----------
 chi-dc04                                  1738292           23.92%
 
 .Notes
 Last Updated: August 17, 2015
-Version     : 1.1
+Version     : 1.1.1
 
 #>
 
 [cmdletbinding(DefaultParameterSetName="None")]
+[OutputType([Double],ParameterSetName="None")]
+[OutputType([String],ParameterSetName="String")]
 Param(
 [Parameter(Position=0,Mandatory,HelpMessage="What is the value?")]
 [ValidateNotNullorEmpty()]
@@ -132,6 +136,7 @@ Version     : 1.1
 #>
 
 [cmdletbinding(DefaultParameterSetName="Default")]
+
 Param(
 [Parameter(Position=1,Mandatory,ValueFromPipeline)]
 [ValidateNotNullorEmpty()]
