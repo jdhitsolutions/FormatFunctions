@@ -90,7 +90,6 @@ else {
 
 } #end function
 
-
 Function Format-Value {
 
 <#
@@ -229,7 +228,124 @@ End {
 } #end
 } 
 
+Function Format-String {
+
+<#
+.Synopsis
+Options for formatting strings
+.Description
+Use this command to apply different types of formatting to strings. You can apply multiple transformations. They are applied in this order:
+
+1) Reverse
+2) Randomization
+3) Replace
+4) Case
+
+.Parameter Case
+Valid values are Upper, Lower, Proper and Toggle. Proper case will capitalize the first letter of the string.
+.Parameter Replace
+Specify a hashtable of replacement values. The hashtable key is the string you want to replace and the value is the replacement. See examples.
+Replacement keys are CASE SENSITIVE.
+.Example
+PS C:\> "P@ssw0rd" | format-string -Reverse
+dr0wss@P
+.Example
+PS C:\> "P@ssw0rd" | format-string -Reverse -Randomize
+rs0Pd@ws
+.Example
+PS C:\> $env:computername | format-string -Case Lower
+win81-ent-01
+.Example
+PS C:\> format-string "p*wer2she!!" -Case Toggle
+P*WeR2ShE!!
+.Example
+PS C:\> format-string "alphabet" -Randomize -Replace @{a="@";e=3} -Case Toggle
+3bPl@tH@
+#>
+
+[cmdletbinding()]
+[OutputType([string])]
+Param(
+[Parameter(Position=0,Mandatory,ValueFromPipeline)]
+[ValidateNotNullorEmpty()]
+[string]$Text,
+[switch]$Reverse,
+[ValidateSet("Upper","Lower","Proper", "Toggle")]
+[string]$Case,
+[hashtable]$Replace,
+[switch]$Randomize
+)
+
+Begin {
+    Write-Verbose "Starting: $($MyInvocation.Mycommand)"  
+    Write-Verbose "Status: Using parameter set $($PSCmdlet.parameterSetName)"
+} #begin
+
+Process {
+    Write-Verbose "Status: Processing $Text"
+    if ($Reverse) {
+        Write-Verbose "Status: Reversing $($Text.length) characters"
+        $rev = for ($i=$Text.length; $i -ge 0 ; $i--) { $Text[$i]}
+        $str = $rev -join ""
+    }
+    else {
+        $str = $Text
+    } 
+
+    if ($Randomize) {
+        Write-Verbose "Status: Randomizing text"
+        $str = ($str.ToCharArray() | Get-Random -count $str.length) -join ""
+    } #Randomize
+
+    if ($Replace) {
+      foreach ($key in $Replace.keys) {
+        Write-Verbose "Status: Replacing $key with $($replace.item($key))"
+        $str = $str.replace($key,$replace.item($key))
+      } #foreach
+    } #replace
+    Switch ($case) {
+    "Upper"  {
+        Write-Verbose "Status: Setting to upper case"
+        $str = $str.ToUpper()
+    } #upper
+    "Lower"  {
+        Write-Verbose "Status: Setting to lower case"
+        $str = $str.ToLower()
+    } #lower
+    "Proper" {
+        Write-Verbose "Status: Setting to proper case"
+        $str = "{0}{1}" -f $str[0].toString().toUpper(),-join $str.Substring(1).ToLower()
+    } #proper
+    "Toggle" {
+        Write-Verbose "Status: Setting to toggle case"
+        $toggled = for ($i = 0 ; $i -lt $str.length ; $i++) {
+          #Odd numbers are uppercase
+          if ($i%2) {
+            $str[$i].ToString().Tolower()
+          }
+          else {
+           $str[$i].ToString().ToUpper()
+          }
+        } #for
+        $str = $toggled -join ""
+    } #toggle
+
+    Default {
+        Write-Verbose "Status: no further formatting"
+    }
+    }
+    #write result to the pipeline
+    $str
+
+} #process
+
+End {
+    Write-Verbose "Ending: $($MyInvocation.Mycommand)"
+} #end
+}
+
 Set-Alias -Name fv -Value Format-Value
 Set-Alias -Name fp -value Format-Percent
+Set-Alias -name fs -value Format-String
 
 Export-ModuleMember -Function * -Alias *
