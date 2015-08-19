@@ -49,9 +49,12 @@ PSComputerName             TotalVisibleMemorySize           PctFreeMem
 chi-dc04                                  1738292           23.92%
 
 .Notes
-Last Updated: August 17, 2015
-Version     : 1.1.1
+Last Updated: August 19, 2015
+Version     : 1.1.2
 
+.Link
+Format-Value
+Format-String
 #>
 
 [cmdletbinding(DefaultParameterSetName="None")]
@@ -78,6 +81,7 @@ $result = $Value/$Total
 
 if ($AsString) {
     Write-Verbose "Status: Writing string result"
+    #use the -F operator to build a percent string to X number of decimal places
     $pctstring = "{0:p$Decimal}" -f $result
     #remove the space before the % symbol
     $pctstring.Replace(" ","")
@@ -85,6 +89,7 @@ if ($AsString) {
 }
 else {
     Write-Verbose "Status: Writing numeric result"
+    #round the result to the specified number of decimal places
     [math]::Round( ($result*100),$Decimal)
 }
 
@@ -101,7 +106,10 @@ This command will format a given numeric value. By default it will treat the num
 The unit of measurement for your value. Valid choices are "KB","MB","GB","TB", and "PB". If you don't specify a unit, the value will remain as is, although you can still specify the number of decimal places.
 .Parameter Decimal
 The number of decimal places to return between 0 and 15.
-
+.Parameter AsCurrency
+Format the numeric value as currency using detected cultural settings. The output will be a string.
+.Parameter AsNumber
+Format the numeric value as a number using detected cultural settings for a separator like a comma. If if incoming value as decimal points, by default they will be removed unless you use -Decimal. The output will be a string.
 .Example
 PS C:\> Get-CimInstance -class win32_logicaldisk -filter "DriveType=3" | Select DeviceID,@{Name="SizeGB";Expression={$_.size | format-value -unit GB}},@{Name="FreeGB";Expression={$_.freespace | format-value -unit GB -decimal 2}}
 
@@ -127,10 +135,19 @@ PS C:\Scripts> 3456.5689 | format-value -AsCurrency
 $3,456.57
 
 Format a value as currency.
-.Notes
-Last Updated: August 17, 2015
-Version     : 1.1
 
+.Example
+PS C:\> 1234567.8973 | format-value -AsNumber -Decimal 2
+1,234,567.90
+
+Format the value as a number to 2 decimal points.
+.Notes
+Last Updated: August 19, 2015
+Version     : 1.1.2
+
+.Link
+Format-String
+Format-Percent
 
 #>
 
@@ -146,11 +163,14 @@ $InputObject,
 [ValidateRange(0,15)]
 [Parameter(ParameterSetName = "Default")]
 [Parameter(ParameterSetName = "Auto")]
+[Parameter(ParameterSetName="Number")]
 [int]$Decimal,
 [Parameter(ParameterSetName="Auto")]
 [switch]$Autodetect,
 [Parameter(ParameterSetName="Currency")]
-[switch]$AsCurrency
+[switch]$AsCurrency,
+[Parameter(ParameterSetName="Number")]
+[switch]$AsNumber
 )
 
 Begin {
@@ -161,6 +181,11 @@ Begin {
 Process {
     Write-Verbose "Status: Formatting $Inputobject"
 
+    <#
+    divide the incoming value by the specified unit
+    There is no need to process other statements so I'm using the Break keyword
+    although in reality the rest of the statements wouldn't be processed anyway
+    #>
     Switch ($PSCmdlet.ParameterSetName) {
      "Default"  {
         Write-Verbose "..as $Unit"
@@ -203,24 +228,40 @@ Process {
             Write-Verbose "..as bytes"
             $value = $InputObject
           }
+          Break
       } #Auto
       "Currency"  {
             Write-Verbose "...as currency"
             "{0:c}" -f $InputObject
-
+            #if using currency no other code in the Process block will be run
+            Break
       }#Currency
-    
+      "Number" {
+            Write-Verbose "...as number"
+            #if -Decimal not used explicitly set it to 0
+            if (-Not $Decimal) {
+                $Decimal = 0
+            }
+            #format as a number to the specified number of decimal points
+            "{0:n$($decimal)}" -f $InputObject
+            Break
+      }
     } #switch parameterset name
 
-    Write-Verbose "Status: Reformatting $value"
-    if ($decimal) {
-        Write-Verbose "..to $decimal decimal places"
-        [math]::Round($value,$decimal)
-    }
-    elseif ($PSCmdlet.ParameterSetName -ne "Currency") {
-        Write-verbose "..as [int]"
-        $value -as [int]
-    }
+    if ($PSCmdlet.ParameterSetName -notmatch "Currency|Number") {
+        Write-Verbose "Status: Reformatting $value"
+        if ($decimal) {
+            Write-Verbose "..to $decimal decimal places"
+            #round the number to the specified number of decimal places
+            [math]::Round($value,$decimal)
+        }
+        else {
+            #if not a currency and not using a decimal then treat the value as an integer
+            #and write the result to the pipeline
+            Write-Verbose "..as [int]"
+            $value -as [int]
+        }
+    } #parameter set <> currency
 } #process
 
 End {
@@ -242,7 +283,11 @@ Use this command to apply different types of formatting to strings. You can appl
 4) Case
 
 .Parameter Case
-Valid values are Upper, Lower, Proper and Toggle. Proper case will capitalize the first letter of the string.
+Valid values are Upper, Lower, Proper, Alternate, and Toggle. 
+Proper case will capitalize the first letter of the string.
+Alternate case will alternate between upper and lower case, starting with upper case, e.g. PoWeRsHeLl
+Toggle case will make upper case lower and vice versa, e.g. Powershell -> pOWERSHELL
+Using Toggle might not work for properly for anything other than English users.
 .Parameter Replace
 Specify a hashtable of replacement values. The hashtable key is the string you want to replace and the value is the replacement. See examples.
 Replacement keys are CASE SENSITIVE.
@@ -256,11 +301,21 @@ rs0Pd@ws
 PS C:\> $env:computername | format-string -Case Lower
 win81-ent-01
 .Example
-PS C:\> format-string "p*wer2she!!" -Case Toggle
+PS C:\> format-string "p*wer2she!!" -Case Alternate
 P*WeR2ShE!!
 .Example
-PS C:\> format-string "alphabet" -Randomize -Replace @{a="@";e=3} -Case Toggle
+PS C:\> format-string "alphabet" -Randomize -Replace @{a="@";e=3} -Case Alternate
 3bPl@tH@
+.Example
+PS C:\> "pOWERSHELL" | Format-string -Case Toggle
+Powershell
+
+.Notes
+Last Updated: August 19, 2015
+Version     : 1.1.2
+.Link
+Format-Value
+Format-Percent
 #>
 
 [cmdletbinding()]
@@ -270,7 +325,7 @@ Param(
 [ValidateNotNullorEmpty()]
 [string]$Text,
 [switch]$Reverse,
-[ValidateSet("Upper","Lower","Proper", "Toggle")]
+[ValidateSet("Upper","Lower","Proper", "Toggle", "Alternate")]
 [string]$Case,
 [hashtable]$Replace,
 [switch]$Randomize
@@ -286,14 +341,18 @@ Process {
     if ($Reverse) {
         Write-Verbose "Status: Reversing $($Text.length) characters"
         $rev = for ($i=$Text.length; $i -ge 0 ; $i--) { $Text[$i]}
+        #join the reverse array back into a string
         $str = $rev -join ""
     }
     else {
+        #copy the Text value to this internal variable
         $str = $Text
     } 
 
     if ($Randomize) {
         Write-Verbose "Status: Randomizing text"
+        #get a random number of characters that is the same length as the original string
+        #and join them back together
         $str = ($str.ToCharArray() | Get-Random -count $str.length) -join ""
     } #Randomize
 
@@ -316,9 +375,9 @@ Process {
         Write-Verbose "Status: Setting to proper case"
         $str = "{0}{1}" -f $str[0].toString().toUpper(),-join $str.Substring(1).ToLower()
     } #proper
-    "Toggle" {
-        Write-Verbose "Status: Setting to toggle case"
-        $toggled = for ($i = 0 ; $i -lt $str.length ; $i++) {
+    "Alternate" {
+        Write-Verbose "Status: Setting to alternate case"
+        $alter = for ($i = 0 ; $i -lt $str.length ; $i++) {
           #Odd numbers are uppercase
           if ($i%2) {
             $str[$i].ToString().Tolower()
@@ -327,8 +386,28 @@ Process {
            $str[$i].ToString().ToUpper()
           }
         } #for
-        $str = $toggled -join ""
+        $str = $alter -join ""
     } #toggle
+    "Toggle" {
+        Write-Verbose "Status: setting to toggle case"
+        <#
+            use a regular expression pattern for a case sensitive match
+            Other characters like ! and numbers will fail the test 
+            but the ToUpper() method will have no effect.
+        #>
+        [regex]$r="[A-Z]"
+        $toggle = for ($i = 0 ; $i -lt $str.length ; $i++) {
+          
+                  if ($r.IsMatch($str[$i])) {
+                    $str[$i].ToString().Tolower()
+                  }
+                  else {
+                   $str[$i].ToString().ToUpper()
+                  }
+           }
+         $str = $toggle -join ""
+
+    }
 
     Default {
         Write-Verbose "Status: no further formatting"
