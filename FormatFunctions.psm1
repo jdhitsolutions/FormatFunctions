@@ -287,7 +287,6 @@ Valid values are Upper, Lower, Proper, Alternate, and Toggle.
 Proper case will capitalize the first letter of the string.
 Alternate case will alternate between upper and lower case, starting with upper case, e.g. PoWeRsHeLl
 Toggle case will make upper case lower and vice versa, e.g. Powershell -> pOWERSHELL
-Using Toggle might not work for properly for anything other than English users.
 .Parameter Replace
 Specify a hashtable of replacement values. The hashtable key is the string you want to replace and the value is the replacement. See examples.
 Replacement keys are CASE SENSITIVE.
@@ -312,7 +311,7 @@ Powershell
 
 .Notes
 Last Updated: August 19, 2015
-Version     : 1.1.2
+Version     : 1.1.3
 .Link
 Format-Value
 Format-Percent
@@ -387,7 +386,7 @@ Process {
           }
         } #for
         $str = $alter -join ""
-    } #toggle
+    } #alternate
     "Toggle" {
         Write-Verbose "Status: setting to toggle case"
         <#
@@ -395,19 +394,18 @@ Process {
             Other characters like ! and numbers will fail the test 
             but the ToUpper() method will have no effect.
         #>
-        [regex]$r="[A-Z]"
-        $toggle = for ($i = 0 ; $i -lt $str.length ; $i++) {
-          
-                  if ($r.IsMatch($str[$i])) {
-                    $str[$i].ToString().Tolower()
-                  }
-                  else {
-                   $str[$i].ToString().ToUpper()
-                  }
-           }
-         $str = $toggle -join ""
-
-    }
+       
+         #code to use methods from [CHAR] which should better handle other cultures
+         $toggle = for ($i = 0 ; $i -lt $str.length ; $i++) {
+            if ([char]::IsUpper($str[$i])) {
+                $str[$i].ToString().ToLower()
+            }
+             else {
+                $str[$i].ToString().ToUpper()
+             }
+          } #for
+            $str = $toggle -join ""
+     } #toggle
 
     Default {
         Write-Verbose "Status: no further formatting"
