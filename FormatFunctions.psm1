@@ -3,6 +3,8 @@
 
 <#
 
+Read help and examples for each function in this module.
+
 Learn more about PowerShell:
 http://jdhitsolutions.com/blog/essential-powershell-resources/
 
@@ -49,8 +51,8 @@ PSComputerName             TotalVisibleMemorySize           PctFreeMem
 chi-dc04                                  1738292           23.92%
 
 .Notes
-Last Updated: August 19, 2015
-Version     : 1.1.2
+Last Updated: March 30, 2016
+Version     : 1.1.3
 
 .Link
 Format-Value
@@ -76,11 +78,12 @@ $Total,
 [Switch]$AsString
 )
 
-Write-Verbose "Status: Calculating percentage from $Value/$Total to $decimal places"
+Write-Verbose "STARTING: $($MyInvocation.Mycommand)"  
+Write-Verbose "STATUS: Calculating percentage from $Value/$Total to $decimal places"
 $result = $Value/$Total
 
 if ($AsString) {
-    Write-Verbose "Status: Writing string result"
+    Write-Verbose "STATUS: Writing string result"
     #use the -F operator to build a percent string to X number of decimal places
     $pctstring = "{0:p$Decimal}" -f $result
     #remove the space before the % symbol
@@ -88,10 +91,12 @@ if ($AsString) {
 
 }
 else {
-    Write-Verbose "Status: Writing numeric result"
+    Write-Verbose "STATUS: Writing numeric result"
     #round the result to the specified number of decimal places
     [math]::Round( ($result*100),$Decimal)
 }
+
+Write-Verbose "ENDING: $($MyInvocation.Mycommand)"
 
 } #end function
 
@@ -142,8 +147,8 @@ PS C:\> 1234567.8973 | format-value -AsNumber -Decimal 2
 
 Format the value as a number to 2 decimal points.
 .Notes
-Last Updated: August 19, 2015
-Version     : 1.1.2
+Last Updated: March 30, 2016 
+Version     : 1.1.3
 
 .Link
 Format-String
@@ -174,12 +179,12 @@ $InputObject,
 )
 
 Begin {
-    Write-Verbose "Starting: $($MyInvocation.Mycommand)"  
-    Write-Verbose "Status: Using parameter set $($PSCmdlet.ParameterSetName)"
+    Write-Verbose "STARTING: $($MyInvocation.Mycommand)"  
+    Write-Verbose "STATUS: Using parameter set $($PSCmdlet.ParameterSetName)"
 } #begin
 
 Process {
-    Write-Verbose "Status: Formatting $Inputobject"
+    Write-Verbose "STATUS: Formatting $Inputobject"
 
     <#
     divide the incoming value by the specified unit
@@ -202,7 +207,7 @@ Process {
         } #default
     }
      "Auto"   {
-          Write-Verbose "Status: Using Autodetect"
+          Write-Verbose "STATUS: Using Autodetect"
       
           if ($InputObject -ge 1PB) {
             Write-Verbose "..as PB"
@@ -249,7 +254,7 @@ Process {
     } #switch parameterset name
 
     if ($PSCmdlet.ParameterSetName -notmatch "Currency|Number") {
-        Write-Verbose "Status: Reformatting $value"
+        Write-Verbose "STATUS: Reformatting $value"
         if ($decimal) {
             Write-Verbose "..to $decimal decimal places"
             #round the number to the specified number of decimal places
@@ -265,7 +270,7 @@ Process {
 } #process
 
 End {
-    Write-Verbose "Ending: $($MyInvocation.Mycommand)"
+    Write-Verbose "ENDING: $($MyInvocation.Mycommand)"
 } #end
 } 
 
@@ -310,8 +315,8 @@ PS C:\> "pOWERSHELL" | Format-string -Case Toggle
 Powershell
 
 .Notes
-Last Updated: August 19, 2015
-Version     : 1.1.3
+Last Updated: March 30, 2016
+Version     : 1.1.4
 .Link
 Format-Value
 Format-Percent
@@ -331,14 +336,14 @@ Param(
 )
 
 Begin {
-    Write-Verbose "Starting: $($MyInvocation.Mycommand)"  
-    Write-Verbose "Status: Using parameter set $($PSCmdlet.parameterSetName)"
+    Write-Verbose "STARTING: $($MyInvocation.Mycommand)"  
+    Write-Verbose "STATUS: Using parameter set $($PSCmdlet.parameterSetName)"
 } #begin
 
 Process {
-    Write-Verbose "Status: Processing $Text"
+    Write-Verbose "STATUS: Processing $Text"
     if ($Reverse) {
-        Write-Verbose "Status: Reversing $($Text.length) characters"
+        Write-Verbose "STATUS: Reversing $($Text.length) characters"
         $rev = for ($i=$Text.length; $i -ge 0 ; $i--) { $Text[$i]}
         #join the reverse array back into a string
         $str = $rev -join ""
@@ -349,7 +354,7 @@ Process {
     } 
 
     if ($Randomize) {
-        Write-Verbose "Status: Randomizing text"
+        Write-Verbose "STATUS: Randomizing text"
         #get a random number of characters that is the same length as the original string
         #and join them back together
         $str = ($str.ToCharArray() | Get-Random -count $str.length) -join ""
@@ -357,25 +362,25 @@ Process {
 
     if ($Replace) {
       foreach ($key in $Replace.keys) {
-        Write-Verbose "Status: Replacing $key with $($replace.item($key))"
+        Write-Verbose "STATUS: Replacing $key with $($replace.item($key))"
         $str = $str.replace($key,$replace.item($key))
       } #foreach
     } #replace
     Switch ($case) {
     "Upper"  {
-        Write-Verbose "Status: Setting to upper case"
+        Write-Verbose "STATUS: Setting to upper case"
         $str = $str.ToUpper()
     } #upper
     "Lower"  {
-        Write-Verbose "Status: Setting to lower case"
+        Write-Verbose "STATUS: Setting to lower case"
         $str = $str.ToLower()
     } #lower
     "Proper" {
-        Write-Verbose "Status: Setting to proper case"
+        Write-Verbose "STATUS: Setting to proper case"
         $str = "{0}{1}" -f $str[0].toString().toUpper(),-join $str.Substring(1).ToLower()
     } #proper
     "Alternate" {
-        Write-Verbose "Status: Setting to alternate case"
+        Write-Verbose "STATUS: Setting to alternate case"
         $alter = for ($i = 0 ; $i -lt $str.length ; $i++) {
           #Odd numbers are uppercase
           if ($i%2) {
@@ -388,7 +393,7 @@ Process {
         $str = $alter -join ""
     } #alternate
     "Toggle" {
-        Write-Verbose "Status: setting to toggle case"
+        Write-Verbose "STATUS: setting to toggle case"
         <#
             use a regular expression pattern for a case sensitive match
             Other characters like ! and numbers will fail the test 
@@ -408,7 +413,7 @@ Process {
      } #toggle
 
     Default {
-        Write-Verbose "Status: no further formatting"
+        Write-Verbose "STATUS: no further formatting"
     }
     }
     #write result to the pipeline
@@ -417,7 +422,7 @@ Process {
 } #process
 
 End {
-    Write-Verbose "Ending: $($MyInvocation.Mycommand)"
+    Write-Verbose "ENDING: $($MyInvocation.Mycommand)"
 } #end
 }
 
