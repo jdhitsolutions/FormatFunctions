@@ -9,3 +9,6 @@ Updated verbose messages
 Updated module manifest
 Updated Readme.txt
 Published to PowerShell Gallery
+
+1.0.6
+Updated module manifest
