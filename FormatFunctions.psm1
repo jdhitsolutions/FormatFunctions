@@ -430,4 +430,3 @@ Set-Alias -Name fv -Value Format-Value
 Set-Alias -Name fp -value Format-Percent
 Set-Alias -name fs -value Format-String
 
-Export-ModuleMember -Function * -Alias *

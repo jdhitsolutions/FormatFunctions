@@ -12,3 +12,7 @@ Published to PowerShell Gallery
 
 1.0.6
 Updated module manifest
+
+1.0.6.1
+Added Pester tests
+Updated Module manifest
