@@ -20,44 +20,6 @@ http://jdhitsolutions.com/blog/essential-powershell-resources/
 
 Function Format-Percent {
 
-<#
-.Synopsis
-Calculate a percent
-.Description
-This command calculates a percentage of a value from a total, with the formula (value/total)*100. The default is to return a value to 2 decimal places but you can configure that with -Decimal. There is also an option to format the percentage as a string which will include the % symbol.
-.Parameter Value
-The numerator value. The parameter has aliases of X and Numerator.
-.Parameter Total
-The denominator value. The parameter has aliases of Y and Denominator.
-.Parameter Decimal
-The number of decimal places to return between 0 and 15.
-.Parameter String
-Format the percentage as a string which will include the % symbol. This is done using the -f operator.
-.Example
-PS C:\> Format-Percent -value 1234.567 -total 5000 -decimal 4
-24.6913
-
-Calculate a percentage from 1234.567 out of 5000 (i.e. 1234.567/5000) to 4 decimal points.
-.Example
-PS C:\> get-ciminstance win32_operatingsystem -computer chi-dc04 | select PSComputername,TotalVisibleMemorySize,@{Name="PctFreeMem";Expression={ Format-Percent $_.FreePhysicalMemory $_.TotalVisibleMemorySize}}
-
-PSComputerName             TotalVisibleMemorySize           PctFreeMem
---------------             ----------------------           ----------
-chi-dc04                                  1738292                23.92
-.Example
-PS C:\> get-ciminstance win32_operatingsystem -computer chi-dc04 | select PSComputername,TotalVisibleMemorySize,@{Name="PctFreeMem";Expression={ Format-Percent $_.FreePhysicalMemory $_.TotalVisibleMemorySize -asString}}
-PSComputerName             TotalVisibleMemorySize           PctFreeMem
---------------             ----------------------           ----------
-chi-dc04                                  1738292           23.92%
-
-.Notes
-Last Updated: March 30, 2016
-Version     : 1.1.3
-
-.Link
-Format-Value
-Format-String
-#>
 
 [cmdletbinding(DefaultParameterSetName="None")]
 [OutputType([Double],ParameterSetName="None")]
@@ -101,60 +63,6 @@ Write-Verbose "ENDING: $($MyInvocation.Mycommand)"
 } #end function
 
 Function Format-Value {
-
-<#
-.Synopsis
-Format a numeric value
-.Description
-This command will format a given numeric value. By default it will treat the number as an integer. Or you can specify a certain number of decimal places. The command will also allow you to format the value in KB, MB, etc. Or you can let the command autodetect the value and divide by an appropriate value.
-.Parameter Unit
-The unit of measurement for your value. Valid choices are "KB","MB","GB","TB", and "PB". If you don't specify a unit, the value will remain as is, although you can still specify the number of decimal places.
-.Parameter Decimal
-The number of decimal places to return between 0 and 15.
-.Parameter AsCurrency
-Format the numeric value as currency using detected cultural settings. The output will be a string.
-.Parameter AsNumber
-Format the numeric value as a number using detected cultural settings for a separator like a comma. If if incoming value as decimal points, by default they will be removed unless you use -Decimal. The output will be a string.
-.Example
-PS C:\> Get-CimInstance -class win32_logicaldisk -filter "DriveType=3" | Select DeviceID,@{Name="SizeGB";Expression={$_.size | format-value -unit GB}},@{Name="FreeGB";Expression={$_.freespace | format-value -unit GB -decimal 2}}
-
-DeviceID                            SizeGB                                      FreeGB
---------                            ------                                      ------
-C:                                     200                                      124.97
-D:                                     437                                       29.01
-E:                                      25                                        9.67
-.Example
-PS C:\> (get-process chrome | measure ws -sum ).sum | format-value -Autodetect -verbose -Decimal 4
-VERBOSE: Starting: Format-Value
-VERBOSE: Status: Using parameter set Auto
-VERBOSE: Status: Formatting 965332992
-VERBOSE: Status: Using Autodetect
-VERBOSE: ..as MB
-VERBOSE: Status: Reformatting 920.61328125
-VERBOSE: ..to 4 decimal places
-920.6133
-VERBOSE: Ending: Format-Value
-
-.Example
-PS C:\Scripts> 3456.5689 | format-value -AsCurrency
-$3,456.57
-
-Format a value as currency.
-
-.Example
-PS C:\> 1234567.8973 | format-value -AsNumber -Decimal 2
-1,234,567.90
-
-Format the value as a number to 2 decimal points.
-.Notes
-Last Updated: March 30, 2016 
-Version     : 1.1.3
-
-.Link
-Format-String
-Format-Percent
-
-#>
 
 [cmdletbinding(DefaultParameterSetName="Default")]
 
@@ -275,52 +183,6 @@ End {
 } 
 
 Function Format-String {
-
-<#
-.Synopsis
-Options for formatting strings
-.Description
-Use this command to apply different types of formatting to strings. You can apply multiple transformations. They are applied in this order:
-
-1) Reverse
-2) Randomization
-3) Replace
-4) Case
-
-.Parameter Case
-Valid values are Upper, Lower, Proper, Alternate, and Toggle. 
-Proper case will capitalize the first letter of the string.
-Alternate case will alternate between upper and lower case, starting with upper case, e.g. PoWeRsHeLl
-Toggle case will make upper case lower and vice versa, e.g. Powershell -> pOWERSHELL
-.Parameter Replace
-Specify a hashtable of replacement values. The hashtable key is the string you want to replace and the value is the replacement. See examples.
-Replacement keys are CASE SENSITIVE.
-.Example
-PS C:\> "P@ssw0rd" | format-string -Reverse
-dr0wss@P
-.Example
-PS C:\> "P@ssw0rd" | format-string -Reverse -Randomize
-rs0Pd@ws
-.Example
-PS C:\> $env:computername | format-string -Case Lower
-win81-ent-01
-.Example
-PS C:\> format-string "p*wer2she!!" -Case Alternate
-P*WeR2ShE!!
-.Example
-PS C:\> format-string "alphabet" -Randomize -Replace @{a="@";e=3} -Case Alternate
-3bPl@tH@
-.Example
-PS C:\> "pOWERSHELL" | Format-string -Case Toggle
-Powershell
-
-.Notes
-Last Updated: March 30, 2016
-Version     : 1.1.4
-.Link
-Format-Value
-Format-Percent
-#>
 
 [cmdletbinding()]
 [OutputType([string])]
