@@ -1,8 +1,12 @@
 ﻿Changelog for FormatFunctions
 
-v1.0.6.3
+v1.0.7.1
+fixed version numbering
+
+v1.0.7.0
 updated author in manifest
 updated copyright dates
+created markdown help
 Created external help
 
 v1.0.6.2
